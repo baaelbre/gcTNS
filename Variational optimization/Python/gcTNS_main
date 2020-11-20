@@ -1,0 +1,195 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import fmin_cg, fmin_slsqp
+from Bosonic_Hamiltonian_1d import E_integrated, C_00_exact, T_exact, C_10_exact, C_01_exact
+########################################
+# General D
+########################################
+
+# initial values for the D=1 case
+Initial = [np.random.rand(), np.random.rand()]
+alpha,V  = Initial
+
+# A and \tilde(A) (see thesis)
+def AA(alpha,D):
+    return np.append(alpha, np.zeros(D))
+def AA_(alpha,D):
+    return np.append(np.zeros(D), alpha)
+
+def M(params,D,alpha_complex=0): 
+    # number of real parameters = 3D;  V = REAL diagonal matrix
+    if alpha_complex:
+        alpha = params[0:2*D] #(all real)
+        alpha = [alpha[i]+1j*alpha[i+1] for i in range(0,2*D,2)]
+        V = np.diagflat(params[2*D:])
+    else:
+        alpha = params[0:D]
+        V = np.diagflat(params[D:])
+
+    M_matrix = np.block([[V, -np.outer(alpha,np.conj(alpha))],
+                      [-np.outer(np.conj(alpha),alpha),V]])
+    # diagonalize M (hermitian matrix)
+    M_diag = np.linalg.eig(M_matrix)
+    # REAL diagonal matrix Sigma + orthogonal (V is real symmetric) matrix P with eigenvectors in the columns M_diag[:,i]
+    Sigma, P = M_diag[0], M_diag[1]
+    return Sigma, P
+
+###################################
+# correlation functions, and energy
+###################################
+    
+def E(params, D=1, x=0, mu=1, nu=0.1, alpha_complex=0):
+    if alpha_complex: 
+        alpha = params[0:2*D] #(all real)
+        alpha = [alpha[i]+1j*alpha[i+1] for i in range(0,2*D,2)] #D-dimensional 
+    else:
+        alpha = params[0:D]
+    A, A_ = AA(alpha,D), AA_(alpha,D)
+    Sigma, P = M(params,D)[0], M(params,D)[1]
+    # als sigma niet positief definiet (kan gebeuren in initial guess), moet het een heel groot getal teruggeven...
+    #if np.any(Sigma<0): return [[100]]
+    P_inv = np.linalg.inv(P) # P^\dagger
+    m_1, m_2, m_3, m_4 = np.matmul(A,P), np.matmul(P_inv,np.conj(A_)), np.matmul(np.conj(A_),P), np.matmul(P_inv,A)
+    # see thesis for expressions
+    # psi^dagger psi
+    def C_00(u):
+        return 0.25*np.sum(np.exp(-np.sqrt(Sigma)*np.abs(u))/np.sqrt(Sigma)*(m_1*m_2+m_3*m_4)),\
+    0.5*np.sum(1/(u**2+Sigma)*(m_1*m_2+m_3*m_4))
+    
+    # psi^dagger psi^dagger
+    def C_01(u):
+        return 0.5*np.sum(np.exp(-np.sqrt(Sigma)*np.abs(u))/np.sqrt(Sigma)*(m_3*m_2)),\
+    np.sum(1/(u**2+Sigma)*(m_3*m_2))
+    
+    # psi psi
+    def C_10(u):
+        return 0.5*np.sum(np.exp(-np.sqrt(Sigma)*np.abs(u))/np.sqrt(Sigma)*(m_1*m_4)),\
+    np.sum(1/(u**2+Sigma)*(m_1*m_4))
+    
+    # kinetic term = d_x d_y (C_00)
+    def T(u):
+        return -0.25*np.sum(np.sqrt(Sigma)*np.exp(-np.sqrt(Sigma)*np.abs(u))*(m_1*m_2+m_3*m_4)),\
+    0.5*np.sum(u**2/(u**2+Sigma)*(m_1*m_2+m_3*m_4))
+    
+    # energy density for trial wavefunction
+    def Energy_function(u):
+        return [T(u)[i] + mu*C_00(u)[i]-nu*(C_01(u)[i]+C_10(u)[i]) for i in range(2)]
+    return np.real(Energy_function(x)), C_00(x), C_01(x), C_10(x), T(x)
+
+# analytic gradient (isn't used yet and seems to contain errors, so ignore)
+# should take a look at karanikaloas thesis
+def grad_E(params, alpha_complex=0):
+    if alpha_complex: 
+        alpha = params[0:2*D] #(all real)
+        alpha = [alpha[i]+1j*alpha[i+1] for i in range(0,2*D,2)] #D-dimensional 
+    else:
+        alpha = params[0:D]
+    A, A_ = AA(alpha,D), AA_(alpha,D)
+    Sigma, P = M(params,D)[0],M(params,D)[1]
+    P_inv = np.linalg.inv(P)
+    m_1, m_2, m_3, m_4 = np.matmul(A,P), np.matmul(P_inv,np.conj(A_)), np.matmul(np.conj(A_),P), np.matmul(P_inv,A)
+    # F=D in notes
+    C,F = [[None]*D]*2
+    C_00_V,C_00_A, C_01_V, C_01_A, C_10_V, \
+    C_10_A,T_V, T_A, Energy_function_V, Energy_function_A = [np.zeros(D) for _ in range(10)]
+    
+    for i in range(D):
+        C[i] = np.outer(P_inv[:,i],P[i,:])+np.outer(P_inv[:,i+D],P[i+D,:])
+        F[i] = np.outer(P_inv[:,i+D],m_1)+np.outer(m_4,P[i+D,:])+np.outer(P_inv[:,i],m_3)+np.outer(m_2,P[i,:])#OK
+
+        C_00_V[i] = -0.125*np.sum(Sigma**(-1.5)*(m_1*np.diag(C[i])*m_2+m_3*np.diag(C[i])*m_4))\
+        -0.25*np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**(-0.5)-Sigma[l]**(-0.5))*(m_1[k]*C[i][k,l]*m_2[l] \
+        +m_3[k]*C[i][k,l]*m_4[l]) for k in range(2*D) for l in range(2*D) if l!=k])#OK
+        C_00_A[i] = 0.25*np.sum(Sigma**(-0.5)*(P[i,:]*m_2+m_1*P_inv[:,i+D]+P[i+D,:]*m_4+m_3*P_inv[:,i]))\
+        +0.125*np.sum(Sigma**(-1.5)*(m_1*np.diag(F[i])*m_2+m_3*np.diag(F[i])*m_4))\
+        + 0.25* np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**(-0.5)-Sigma[l]**(-0.5))\
+                        *(m_1[k]*F[i][k,l]*m_2[l]+m_3[k]*F[i][k,l]*m_4[l])\
+                for k in range(2*D) for l in range(2*D) if l!=k])#OK
+        C_01_V[i] = -0.25*np.sum(Sigma**(-1.5)*m_3*np.diag(C[i])*m_2) \
+        -0.5*np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**(-0.5)-Sigma[l]**(-0.5))*(m_3[k]*C[i][k,l]*m_2[l]) \
+                for k in range(2*D) for l in range(2*D) if l!=k])#OK
+        C_01_A[i] = 0.5*np.sum(Sigma**(-0.5)*(P[i+D,:]*m_2+m_3*P_inv[:,i+D]))\
+        +0.25*np.sum(Sigma**(-1.5)*(m_3*np.diag(F[i])*m_2))\
+        + 0.5* np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**(-0.5)-Sigma[l]**(-0.5))*(m_3[k]*F[i][k,l]*m_2[l]) \
+                for k in range(2*D) for l in range(2*D) if l!=k])#OK
+        C_10_V[i] = -0.25*np.sum(Sigma**(-1.5)*m_1*np.diag(C[i])*m_4)\
+        -0.5* np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**(-0.5)-Sigma[l]**(-0.5))*(m_1[k]*C[i][k,l]*m_4[l]) \
+                for k in range(2*D) for l in range(2*D) if l!=k])#OK
+        C_10_A[i] = 0.5*np.sum(Sigma**(-0.5)*(P[i,:]*m_4+m_1*P_inv[:,i]))\
+        +0.25*np.sum(Sigma**(-1.5)*(m_1*np.diag(F[i])*m_4))\
+        + 0.5* np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**(-0.5)-Sigma[l]**(-0.5))*(m_1[k]*F[i][k,l]*m_4[l]) \
+                for k in range(2*D) for l in range(2*D) if l!=k])#OK
+    # CHECK MINTEKENS
+        T_V[i] = 0.125*np.sum(Sigma**(-0.5)*(m_1*np.diag(C[i])*m_2+m_3*np.diag(C[i])*m_4)) \
+        +0.25*np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**0.5-Sigma[l]**0.5)*(m_1[k]*C[i][k,l]*m_2[l] \
+        +m_3[k]*C[i][k,l]*m_4[l]) for k in range(2*D) for l in range(2*D) if l!=k])
+        T_A[i] = -0.25*np.sum(Sigma**0.5*(P[i,:]*m_2+m_1*P_inv[:,i+D]+P[i+D,:]*m_4+m_3*P_inv[:,i]))\
+        -0.125*np.sum(Sigma**(-0.5)*(m_1*np.diag(F[i])*m_2+m_3*np.diag(F[i])*m_4))\
+        - 0.25* np.sum([1/(Sigma[l]-Sigma[k])*(Sigma[k]**0.5-Sigma[l]**0.5)\
+                        *(m_1[k]*F[i][k,l]*m_2[l]+m_3[k]*F[i][k,l]*m_4[l])\
+                for k in range(2*D) for l in range(2*D) if l!=k])
+        Energy_function_V[i] = T_V[i] + mu*C_00_V[i]-nu*(C_01_V[i]+C_10_V[i])
+        Energy_function_A[i] = T_A[i] + mu*C_00_A[i]-nu*(C_01_A[i]+C_10_A[i])
+        
+    return np.concatenate((Energy_function_A, Energy_function_V),axis=0)
+
+iterationstep=1
+def callbackF(var):
+    global iterationstep
+    print(iterationstep, var)
+    iterationstep += 1
+    
+# if you would like to check what alpha complex can do
+def complex_to_real(z): # complex vector of length n -> real of length 2n
+    reals = []
+    for i in z:
+        reals.append(np.real(i))
+        reals.append(np.imag(i))
+    return reals
+
+if __name__ == '__main__':
+    # If you want to work with complex alpha (D more variational parameters), set True
+    alpha_complex = False
+    # nu should be smaller than mu/2 (gap closes at nu=mu/2)
+    mu, nu = 1, 0.1
+    # bond field dimension
+    D_=4
+    # accuracy of minimization
+    acc = -9
+    var_results = dict()
+    for D in range(1,D_+1):
+        smode = 1 # if optimalization fails (stuck in local minima), start again (until smode=0)
+        while smode !=0:
+            # random numbers get the energy out of the wrong minima
+            if alpha_complex: 
+                alpha_temp, V_temp = alpha + np.random.rand(1,D)[0] +1j*np.random.rand(1,D)[0], V + np.random.rand(1,D)[0]
+                alpha_temp = complex_to_real(alpha_temp)
+            else:
+                alpha_temp, V_temp = alpha + 0*np.random.rand(1,D)[0], V + np.random.rand(1,D)[0]
+            
+            Initial=np.concatenate((alpha_temp,V_temp),axis=0)
+            # constraint for decaying correlations: Sigma is positive definite (it was already real, so no negative eigs)
+            var_params = fmin_slsqp(lambda z: E(z,D,x=0, mu=mu, nu=nu,alpha_complex=alpha_complex)[0][0],Initial,ieqcons=[lambda s: M(s,D)[0]],#fprime=grad_E,
+                                                       acc=10**acc,full_output=True,iter=1000)# callback=callbackF)
+            smode=var_params[-2]
+        var_results[D] = var_params[0] # alpha [0:D/2D], V[D/2D:]
+        Sigma, P = M(var_params[0],D)[0], M(var_params[0],D)[1]
+        #Sigma, P = np.real(M(var_params[0],D)[0]), np.real(M(var_params[0],D)[1]) # ensure everything is real...
+        if alpha_complex: 
+            alpha, V = np.array(var_params[0][0:2*D]),var_params[0][2*D:]
+            alpha = [alpha[i]+1j*alpha[i+1] for i in range(0,2*D,2)]
+        else: 
+            alpha, V = var_params[0][0:D],var_params[0][D:]
+    
+        print('D = '+str(D))
+        print(r'Sigma='+str(Sigma))
+        print(r'V='+str(V))
+        print(r'alpha='+str(alpha))
+        # initial values are those of D-1, supplemented with 1/2's
+        alpha = np.hstack((alpha,[1/2]))
+        V = np.hstack((V,[1/2]))
+    # save variational results in numpy file   
+    if alpha_complex:
+        np.save('var_results_nu={}_acc={}_D={}_alphacomplex.npy'.format(int(100*nu),acc, D_), var_results)# mu=1 fixed, nu from 0.01 ('01') to 0.50 (50)
+    else:
+        np.save('var_results_nu={}_acc={}_D={}_alphareal.npy'.format(int(100*nu),acc, D_), var_results)# mu=1 fixed, nu from 0.01 ('01') to 0.50 (50)

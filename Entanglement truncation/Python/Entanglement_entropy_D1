@@ -1,0 +1,199 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 12 22:02:45 2020
+
+@author: Gebruiker
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+
+##############################################
+#D=1 (to reproduce results from section 4.6.1)
+##############################################
+
+# harmonic oscillator potential in terms of (1) the normal modes and (2) the original coordinates (with coupling)
+def potential(x_plus,x_min,V=0.81, alpha=0.62,n=2,m=2):
+    omega_plus, omega_min = np.sqrt(V - alpha**2), np.sqrt(V+alpha**2)
+    omega = omega_plus
+    Energy_levels = [((n_,m_), omega_plus*(n_+0.5)+omega_min*(m_+0.5)) for n_ in range(n) for m_ in range(m)]
+    return omega_plus*x_plus**2/2 + omega_min*x_min**2/2, omega*x_plus**2/2 + omega*x_min**2/2 + alpha**2/2*(x_plus-x_min)**2, Energy_levels
+
+# The xi as defined in (345), equivalent to (357)
+def ksi_function(V, alpha):
+    omega_plus, omega_min = np.sqrt(V - alpha**2), np.sqrt(V+alpha**2)
+    return ((np.sqrt(omega_min)-np.sqrt(omega_plus))/(np.sqrt(omega_min)+np.sqrt(omega_plus)))**2
+
+# Schmidt coefficient. Only function of xi.
+def lambda_i(V, alpha, i, ksi=None):
+    if not ksi:
+        ksi = ksi_function(V, alpha)
+    return (1-ksi)*ksi**i
+
+# Entropy as function of xi, according to eq. (351)
+def S(V = 0.81, alpha = 0.62, ksi=None):
+    if not ksi:
+        ksi = ksi_function(V, alpha)
+    return - np.log(1-ksi) - ksi/(1-ksi)*np.log(ksi)
+
+# The entropy up to a certain Schmidt number n (Schmidt Values are naturally ordered, see lambda_i)
+def S_lambda(V = 0.81, alpha = 0.62, n=1, ksi=None):
+    lambda_n = [lambda_i(V, alpha, i, ksi) for i in range(int(n))]
+    return - np.sum(lambda_n *np.log(lambda_n))
+
+if __name__ == '__main__':
+    
+    ###########################################
+    #The potential energy plots from figure 28
+    ###########################################
+    # normal modes
+    fig_V = plt.figure(figsize=(12,10))
+    ax_V = fig_V.add_subplot(111,projection='3d')
+    ax_V.set_xlabel(r'$x_+$', fontsize=15)
+    ax_V.set_ylabel(r'$x_{-}$', fontsize=15)
+    ax_V.set_zlabel(r'$V(x_+,x_{-})$', fontsize=15)
+    x_plus, x_min = np.linspace(-2,2,100), np.linspace(-2,2,100)
+    x_plus, x_min = np.meshgrid(x_plus, x_min)
+    ax_V.plot_wireframe(x_plus, x_min, potential(x_plus,x_min)[0], color='blue')
+    
+    # number of eigenstates shown
+    n, m = 2,2
+    #colors = [np.random.rand()]
+    for Energy in potential(x_plus, x_min)[2]:
+        Z=0*x_plus + 0*x_min + Energy[1]
+        ax_V.plot_wireframe(x_plus, x_min, Z, label = r'$E_{{{},{}}}$'.format(Energy[0][0], Energy[0][1]), 
+                            color=(np.random.rand(),np.random.rand(),np.random.rand()))
+    ax_V.legend(fontsize=15)
+    # original coordinates
+    fig_VV = plt.figure(figsize=(12,10))
+    ax_VV = fig_VV.add_subplot(111,projection='3d')
+    ax_VV.set_xlabel(r'$x_1$', fontsize=15)
+    ax_VV.set_ylabel(r'$x_2$', fontsize=15)
+    ax_VV.set_zlabel(r'$V(x_1,x_2)$', fontsize=15)
+    x_plus, x_min = np.linspace(-2,2,100), np.linspace(-2,2,100)
+    x_plus, x_min = np.meshgrid(x_plus, x_min)
+    ax_VV.plot_wireframe(x_plus, x_min, potential(x_plus,x_min)[1], color='blue')
+
+    for Energy in potential(x_plus, x_min)[2]:
+        Z=0*x_plus + 0*x_min + Energy[1]
+        ax_VV.plot_wireframe(x_plus, x_min, Z, label = r'$E_{{{},{}}}$'.format(Energy[0][0], Energy[0][1]), 
+                            color=(np.random.rand(),np.random.rand(),np.random.rand()))
+    ax_VV.legend(fontsize=15)
+    
+    #########################
+    # Entanglement plots
+    #########################
+    fig, ax = plt.subplots(figsize=(12,10))
+    #fig.suptitle('Entropy of 2 coupled harmonic oscillators', fontsize=15)
+    ax.set_xlabel(r'$\xi$', fontsize=15)
+    ax.set_ylabel(r'$S(\xi)$', fontsize=15)
+    ax.grid(True)
+    ksi_range = np.linspace(0,1,100)
+    ax.plot(ksi_range, [S(ksi=i) for i in ksi_range])
+    
+    fig_lambda, ax_lambda = plt.subplots(figsize=(10,8))
+    #fig_lambda.suptitle('Entropy as a function of Schmidt parameter')
+    ax_lambda.set_xlabel(r'$n$', fontsize=15)
+    ax_lambda.set_ylabel(r'$S(\{\lambda_n(V, \alpha)\})$', fontsize=15)
+    ax_lambda.grid(True)
+    n=5
+    ax_lambda.set_xticks([i for i in range(n)])
+    ax_lambda.plot([i for i in range(1,n)], [S_lambda(n=i) for i in range(1,n)], '-.', label = r'$S(n)$')
+    ax_lambda.plot([i for i in range(1,n)], [S() for i in range(1,n)], '-.', label = r'asymptotic')
+    
+    # Values = dictionary with for each nu a tuple (alpha, V), e.g. Values[0.4] = (0.62,0.81)
+    # Made it by hand, but should automate this
+    Values = np.load('nu_Values_D1.npy',allow_pickle='TRUE').item()
+    Values_list = list(Values.values())
+    
+    fig_lambda_2, ax_lambda_2 = plt.subplots(figsize=(10,8))
+    #fig_lambda.suptitle('Entanglement spectrum of the D=1 gcTNS for different nu)
+    ax_lambda_2.set_xlabel(r'$n$', fontsize=15)
+    ax_lambda_2.set_ylabel(r'$\lambda_n$', fontsize=15)
+    ax_lambda_2.set_yscale('log')
+    ax_lambda_2.grid(True)
+    # n = number of Schmidt values showed
+    n=3 
+    ax_lambda_2.set_xticks([i for i in range(n)])
+    alpha, V = Values[0.4]
+    ax_lambda_2.plot([i for i in range(1,n+1)], [lambda_i(V=V, alpha=alpha, i=i) for i in range(0,n)], '.', ms=15, label=r'$\nu=0.4$')
+    alpha, V = Values[0.1]
+    ax_lambda_2.plot([i for i in range(1,n+1)], [lambda_i(V=V, alpha=alpha, i=i) for i in range(0,n)], '.', ms=15, label=r'$\nu=0.1$')
+    alpha, V = Values[0.49]
+    ax_lambda_2.plot([i for i in range(1,n+1)], [lambda_i(V=V, alpha=alpha, i=i) for i in range(0,n)], '.', ms=15, label=r'$\nu=0.49$')
+    
+    ax_lambda_2.legend(fontsize=15)
+    # alpha^2 should be smaller than V
+    V = Values[0.4][1]
+    fig_alpha, ax_alpha = plt.subplots(figsize=(10,8))
+    #fig_alpha.suptitle('Entanglement entropy for D=1, fixed $V$')
+    ax_alpha.set_xlabel(r'$\alpha$', fontsize=15)
+    ax_alpha.set_ylabel(r'$S(V={:.2f},\alpha)$'.format(V), fontsize=15)
+    ax_alpha.grid(True)
+    alpha_range = np.linspace(0,np.sqrt(V),100)
+    ax_alpha.vlines(np.sqrt(V),0,1, label=r'$|\alpha| < \sqrt{V}$')
+    ax_alpha.plot(alpha_range, [S(alpha=i) for i in alpha_range])
+    ax_alpha.legend(fontsize=15)
+    
+    
+    fig_3D = plt.figure(figsize=(10,8))
+    #fig_3D.suptitle('Entropy as function of V and alpha and optimal solutions')
+    ax_3D = fig_3D.add_subplot(111,projection='3d')
+    ax_3D.set_xlabel(r'$V$', fontsize=15)
+    ax_3D.set_ylabel(r'$\alpha$', fontsize=15)
+    ax_3D.set_zlabel(r'$S(V, \alpha)$', fontsize=15)
+    V, alpha = np.linspace(0,1,100), np.linspace(0,1,100)
+    V, alpha = np.meshgrid(V, alpha)
+    
+    # display the energy minima for different nu (fixed mu=1)
+    N = len(Values_list)
+    alpha_chosen, V_chosen, S_chosen = [value[0] for value in Values_list], [value[1] for value in Values_list], \
+    [S(V = value[1], alpha = value[0]) for value in Values_list]
+    ax_3D.plot_surface(V, alpha, S(V, alpha))
+    ax_3D.plot([V_chosen[0]], [alpha_chosen[0]], [S_chosen[0]],  'k.', color='orange',lw=30)
+    ax_3D.plot([V_chosen[-1]], [alpha_chosen[-1]], [S_chosen[-1]],  'k.', color='orange',lw=30)
+    ax_3D.plot([0.81 for _ in V_chosen], [0.05*i for i in range(N)], [S_chosen[-6] for _ in V_chosen], color='red')
+    ax_3D.plot([V_chosen[int(N/2)+2]], [alpha_chosen[int(N/2)+2]], [S_chosen[int(N/2)+2]], color='orange', marker='>')
+    ax_3D.plot(V_chosen, alpha_chosen, S_chosen, color='orange')
+    
+
+    
+    # Some fancy plots of the entanglement spectrum in 3D:
+    # Schmidt values as function of V and alpha
+    # Didn't make it to the thesis though
+    fig_Schmidt = plt.figure(figsize=(12,10))
+    ax_Schmidt = fig_Schmidt.add_subplot(111,projection='3d')
+    ax_Schmidt.set_xlabel(r'$V$', fontsize=15)
+    ax_Schmidt.set_ylabel(r'$\alpha$', fontsize=15)
+    ax_Schmidt.set_zlabel(r'$\lambda_n(V,\alpha)$', fontsize=15)
+    n=3
+    V, alpha = np.linspace(0,1,100), np.linspace(0,1,100)
+    V, alpha = np.meshgrid(V, alpha)
+    Schmidts = [lambda_i(V, alpha, i) for i in range(int(n))]
+    
+    #sort Schmidt Values
+    Schmidts=sorted(Schmidts, key= lambda x: x[0][-1])
+    number=0
+    for Schmidt in Schmidts:
+        number+=1
+        #of wireframe
+        ax_Schmidt.plot_surface(V, alpha, Schmidt, 
+                                  color=(np.random.rand(), np.random.rand(), np.random.rand()), label = 'n='+str(number))
+    ax_Schmidt.legend()
+    
+'''
+# figure 4 from the introduction
+fig_Bell, ax_Bell = plt.subplots(figsize=(8,6))
+ax_Bell.set_xlabel(r'Index $k$', fontsize=15)
+ax_Bell.set_ylabel(r'Schmidt value $ \lambda_k$', fontsize=15)
+k = [1,2]
+lambda_1 = [0.5,0.5]
+lambda_2 = [2/3, 1/3]
+lambda_3 = [1,0]
+ax_Bell.grid(True)
+ax_Bell.set_xticks(k)
+ax_Bell.plot(k, lambda_1, 'ro', ms=10, label=r'$|\Psi^->: S=0.69$')
+ax_Bell.plot(k, lambda_2, 'bo', ms=10, label=r'$|\tilde{\Psi}^->:S=0.63$')
+ax_Bell.plot(k, lambda_3, 'go', ms=10, label=r'$|\Psi^P>: S=0$')
+ax_Bell.legend(fontsize=15)
+'''

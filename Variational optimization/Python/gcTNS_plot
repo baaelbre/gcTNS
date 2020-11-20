@@ -1,0 +1,80 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from gcTNS_main import E
+import sys
+from Bosonic_Hamiltonian_1d import E_integrated, C_00_exact, T_exact, C_10_exact, C_01_exact
+nu = 0.1
+D_=3
+acc = -9 #10**-9
+alpha_complex = False
+E_Exact = E_integrated(1,nu)
+try:
+    if alpha_complex:
+        var_results = np.load('var_results_nu={}_acc={}_D={}_alphacomplex.npy'.format(int(100*nu),acc, D_),allow_pickle='TRUE').item()
+    else:
+        var_results = np.load('var_results_nu={}_acc={}_D={}_alphareal.npy'.format(int(100*nu),acc, D_),allow_pickle='TRUE').item()
+except FileNotFoundError:
+    sys.exit("WARNING: Run gcTNS_main with\nnu = {},\nD_ = {},\nacc = {},\
+             \nalpha_complex = {}\nto obtain the numpy files".format(nu, D_, acc, alpha_complex))
+# initiate plots
+fig, axs = plt.subplots(2,2,figsize=(10,8))
+fig.suptitle(r'$\mu=1$, $\nu$={}'.format(nu), fontsize=15)
+for i in range(2):
+    for j in range(2): 
+        axs[i,j].grid(1)
+        axs[i,j].set_xscale("log")
+        axs[i,j].set_yscale("log")
+        axs[i,j].set_xlabel(r'$p$', fontsize=14)
+fig, axx = plt.subplots(figsize=(10,8))
+axx.set_xlabel(r'$p$', fontsize=17)
+axx.set_ylabel(r'$\epsilon_0(p)$', fontsize=17)
+axx.set_xscale('log')
+axs[0,0].set_ylabel(r'$<\psi^\dagger(p)\psi(p)>$', fontsize=14)
+axs[1,0].set_ylabel(r'$<\psi(p)\psi(-p)>$', fontsize=14)
+axs[0,1].set_ylabel(r'$<\psi^\dagger(p)\psi^\dagger(-p)>$', fontsize=14)
+axs[1,1].set_ylabel(r'$<p^2\psi^\dagger(p)\psi(p)>$', fontsize=14)
+plt.tight_layout(pad=3.0)
+z=np.linspace(0,10,1000)
+
+errors=[]
+
+for D in range(1,D_+1):
+    var_params = var_results[D]
+    error_abs = np.abs((E(var_params,D,x=0, mu=1, nu=nu)[0][0]-E_Exact))
+    error_rel = error_abs/np.abs(E_Exact)*100
+    errors.append(error_abs)
+    # plot all correlators
+    l=1
+    for i in range(2):
+        for j in range(2): 
+            axs[i,j].plot(z, [np.abs(E(var_params,D=D,x=k, mu=1, nu=nu, alpha_complex=alpha_complex)[l][1]) for k in z],'-',label='D='+str(D))
+            l+=1
+    axx.plot(z, [E(var_params,D=D,x=k, mu=1, nu=nu, alpha_complex=alpha_complex)[0][1] for k in z],'-',label='D='+str(D))
+    
+# plot the absolute errors as a function of D
+plt.legend(fontsize=15)
+plt.tick_params(axis='both', labelsize=17)
+plt.figure(figsize=(12,10))
+plt.yscale("log")
+plt.grid()
+plt.title(r'$\mu=1$, $\nu$={}'.format(nu),fontsize=17)
+plt.xlabel('Bond dimension D',fontsize=17)
+plt.ylabel('Absolute error $\epsilon$',fontsize=17)
+plt.yticks([error for error in errors],['{:.1e}'.format(error) for error in errors], fontsize=17)
+plt.xticks([i for i in range(D_+1)], fontsize=17)
+plt.tick_params(axis='both', labelsize=17)
+plt.tick_params(axis="y", labelsize=17)
+plt.plot([D+1 for D in range(D_)],errors,'ro'+'-')
+
+# plot exact correlators 
+axs[0,0].plot(z,[C_00_exact(i,mu=1,nu=nu) for i in z],'-',label='exact')
+axs[1,1].plot(z,[T_exact(i,mu=1,nu=nu) for i in z],'-',label='exact')
+axs[0,1].plot(z,[C_01_exact(i,mu=1,nu=nu) for i in z],'-',label='exact')
+axs[1,0].plot(z,[C_10_exact(i,mu=1,nu=nu) for i in z],'-',label='exact')
+axx.plot(z, [1/2*(np.sqrt((p**2 + 1)**2 - 4*nu**2) - (p**2 + 1)) for p in z],'-',label='exact')
+ 
+# legends
+for i in range(2):
+    for j in range(2): 
+        axs[i,j].legend(fontsize=14)
+axx.legend(fontsize=14) 

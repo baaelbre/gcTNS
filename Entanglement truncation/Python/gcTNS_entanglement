@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from gcTNS_main import M, AA, AA_
+import sys
+nu = 0.1
+D_=6
+acc = -12 #10**-9
+alpha_complex = False
+# number of Schmidt values
+n=4
+
+try:
+    if alpha_complex:
+        var_results = np.load('var_results_nu={}_acc={}_D={}_alphacomplex.npy'.format(int(100*nu),acc, D_),allow_pickle='TRUE').item()
+    else:
+        var_results = np.load('var_results_nu={}_acc={}_D={}_alphareal.npy'.format(int(100*nu),acc, D_),allow_pickle='TRUE').item()
+except FileNotFoundError:
+    sys.exit("WARNING: Run gcTNS_main with\nnu = {},\nD_ = {},\nacc = {},\
+             \nalpha_complex = {}\nto obtain the numpy files".format(nu, D_, acc, alpha_complex))
+
+def S(xi):
+        return np.sum(-np.log(1-xi) - xi/(1-xi)*np.log(xi))
+def lambda_xi(xi, n_ = 5):
+# all possible combinations (1-xi[0])(1-xi[1]), (1-xi[0])xi[0](1-xi[1]), (1-xi[0])(1-xi[1])xi[1],
+# (1-xi[0])xi[0](1-xi[1])xi[1], (1-xi[0])xi[0]^2(1-xi[1]) etc.
+    lambda_list = [np.prod(1-xi)]
+    for i in range(D):
+        aux_list = []
+        for j in range(1,n_):
+            for lambda_elt in lambda_list: aux_list.append(lambda_elt*xi[i]**j)
+        lambda_list += aux_list
+                # sort from big to small
+    return sorted(lambda_list, reverse=True)
+        
+# initiate entanglement spectra
+fig_lambda, ax_lambda = plt.subplots(figsize=(10,8))
+ax_lambda.set_xlabel(r'$n$', fontsize=15)
+ax_lambda.set_ylabel(r'$\lambda_n$', fontsize=15)
+ax_lambda.grid(True)
+ax_lambda.set_xticks([i for i in range(1,n+1)])
+ax_lambda.set_yscale('log')
+
+for D in range(1,D_+1):
+    var_params = var_results[D]
+    Sigma, P = M(var_params,D)[0], M(var_params,D)[1]
+    #STEP 1
+    Omega = np.matmul(P, np.matmul(np.diagflat(np.sqrt(Sigma)),P.T))
+    A = Omega[:D, :D] #left upper triangle
+    B = Omega[D:, :D] #left lower triangle
+    A_inv = np.linalg.inv(A)
+    #STEP 2
+    beta = 0.5*np.matmul(np.matmul(B, A_inv), B)
+    gamma = A-beta
+    #STEP 3
+    gamma_diag = np.linalg.eig(gamma)
+    gamma_D, O = gamma_diag[0], gamma_diag[1]
+    gamma_D_sqrt = np.diagflat(gamma_D**(-0.5))
+    #STEP 4
+    beta_ = np.matmul(np.matmul(O.T, gamma_D_sqrt),np.matmul(beta,np.matmul(gamma_D_sqrt,O)))
+    b_ = np.linalg.eig(beta_)[0]
+    xi = b_/(1+(1-b_**2)**0.5)
+    #STEP 5: Schmidt coefficients
+    ax_lambda.plot([i for i in range(1,n+1)], lambda_xi(xi)[:n], '.', ms=15, label = 'D={}'.format(D))
+
+ax_lambda.legend(fontsize=14)
