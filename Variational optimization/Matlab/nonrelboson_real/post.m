@@ -6,8 +6,9 @@ data = dlmread('results/data');
 mu = 1;
 nulist = [0.25,0.4,0.45,0.495,0.5];
 Dmax = [2,3,3,4,5];
-
 l = [];
+
+figure('Position',[0,0,800,600])
 for i = 1:length(nulist)
     nu = nulist(i);
     mask = data(:,2) == nu;
@@ -21,9 +22,11 @@ for i = 1:length(nulist)
     hold on
 end
 
-xlabel("$D$",'Interpreter','Latex','FontSize',15)
-ylabel("Relative energy density error",'Interpreter','Latex','FontSize',15)
-legend(l,'Interpreter','Latex','FontSize',15,'Location','eastoutside')
+set(gca,'TickLabelInterpreter','Latex')
+set(gca,'FontSize',15)
+xlabel("$D$",'Interpreter','Latex','FontSize',20)
+ylabel("Relative energy density error",'Interpreter','Latex','FontSize',20)
+legend(l,'Interpreter','Latex','FontSize',15,'Location','northeast','NumColumns',2)
 
 %{
 p = 0:0.0001:50;

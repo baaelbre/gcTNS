@@ -14,17 +14,18 @@ if isempty(varargin)
         flag = any(con(x0) > 0);
     end
 else
+    x0 = dlmread(strcat('results/',num2str(mu),'_',num2str(nu),'_',num2str(D),'_',num2str(varargin{1})),',');
 end
 
 %actual optimization
-x = fmincon(fun,x0,[],[],[],[],[],[],con,options);
+[x,fval,exitflag] = fmincon(fun,x0,[],[],[],[],[],[],con,options);
 
 %output
 files = dir(strcat('results/',num2str(mu),'_',num2str(nu),'_',num2str(D),'_*'));
 z = length(files)+1;
-dlmwrite(strcat('results/',num2str(mu),'_',num2str(nu),'_',num2str(D),'_',num2str(z)),x,'precision','%18.15f');
+dlmwrite(strcat('results/',num2str(mu),'_',num2str(nu),'_',num2str(D),'_',num2str(z)),x,'precision','%.15e');
 fid = fopen('results/data','a');
-fprintf(fid,strcat(num2str(mu),'\t',num2str(nu),'\t',num2str(D),'\t',num2str(fun(x),'%18.15f'),'\n'));
+fprintf(fid,strcat(num2str(mu,'%.3e'),'\t',num2str(nu,'%.3e'),'\t',num2str(D),'\t',num2str(fval,'%.15e'),'\t',num2str(exitflag),'\t\t',num2str(z),'\n'));
 fclose(fid);
 
 end

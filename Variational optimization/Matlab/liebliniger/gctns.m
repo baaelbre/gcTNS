@@ -11,7 +11,7 @@ if isempty(varargin)
     end
     x0(1) = -ceq;
 else
-    x0 = varargin;
+    x0 = dlmread(strcat('results/',num2str(gamma),'_',num2str(D),'_',num2str(varargin{1})),',');
 end
 
 %initialize constrained optimization
@@ -23,11 +23,11 @@ options = optimoptions('fmincon','Display','iter','Algorithm','sqp-legacy','MaxF
 [x,fval,exitflag] = fmincon(fun,x0,[],[],[],[],[],[],con,options);
 
 %output
-files = dir(strcat('results/',num2str(D),'_*'));
+files = dir(strcat('results/',num2str(gamma),'_',num2str(D),'_*'));
 z = length(files)+1;
-dlmwrite(strcat('results/',num2str(D),'_',num2str(z)),x,'precision','%18.15f');
+dlmwrite(strcat('results/',num2str(gamma),'_',num2str(D),'_',num2str(z)),x,'precision','%.15e');
 fid = fopen('results/data','a');
-fprintf(fid,strcat(num2str(D),'\t',num2str(gamma),'\t',num2str(fval*gamma^3,'%18.15f'),'\t',num2str(exitflag),'\n'));
+fprintf(fid,strcat(num2str(gamma,'%.3e'),'\t',num2str(D),'\t',num2str(fval*gamma^3,'%.15e'),'\t',num2str(exitflag),'\t\t',num2str(z),'\n'));
 fclose(fid);
 
 end
