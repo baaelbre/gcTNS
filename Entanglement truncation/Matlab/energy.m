@@ -4,10 +4,10 @@ clc
 mu = 1;
 nu = 0.4;
 
-data = dlmread('../nonrelboson_real/results/data');
+data = dlmread('../../Variational_optimization/Matlab/nonrelboson_real/results/data');
 mask = boolean((data(:,1) == mu).*(data(:,2) == nu).*(data(:,3) == 1));
 e_gctns = data(mask,4);
-data = dlmread(strcat('../nonrelboson_real/results/',num2str(mu),'_',num2str(nu),'_1_1'),',');
+data = dlmread(strcat('../../Variational_optimization/Matlab/nonrelboson_real/results/',num2str(mu),'_',num2str(nu),'_1_1'),',');
 V = data(1);
 alpha = data(2);
 Omega = sqrt(V^2-alpha^4);
@@ -18,7 +18,7 @@ Dmax = 15;
 e = zeros(1,Dmax);
 for D = 1:Dmax
     R = alpha/sqrt(2*Omega)*(diag(sqrt(1:D-1),1)+diag(sqrt(1:D-1),-1));
-    Q = -V/2/Omega*diag(1:2:2*D-1) - Omega/4*diag(-1:2:2*D-3) + 1/4*(Omega-V/Omega)*(diag(sqrt((2:D-1).*(1:D-2)),2)+diag(sqrt((2:D-1).*(1:D-2)),-2));
+    Q = -V/4/Omega*diag(1:2:2*D-1) - Omega/4*diag(1:2:2*D-1) + 1/4*(Omega-V/Omega)*(diag(sqrt((2:D-1).*(1:D-2)),2)+diag(sqrt((2:D-1).*(1:D-2)),-2));
 
     rhoL = FindSSL(Q, R, D);
     rhoR = FindSSR(Q, R, D);
