@@ -13,5 +13,6 @@ Omega_inv = M^(-1/2);
 % RDM: only keep upper left blocks of Omega(_inv) in covariance matrix
 X = Omega_inv(1:D, 1:D);
 P = Omega(1:D, 1:D);
+gamma = blkdiag(X,P);
 % and now X != P^-1 
-disp(X), disp(Omega_inv), disp(P);
+disp(X), disp(P), disp(gamma);
