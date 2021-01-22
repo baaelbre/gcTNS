@@ -1,5 +1,5 @@
 function [] = gctns(D,mu,nu,varargin)
-%Optimize GcTNS for non-relativistiv boson in 1d and D bond fields.
+%Optimize GcTNS for non-relativistic boson in 1d and D bond fields.
 
 %initialize constrained optimization
 fun = @(U)Fobj(U,mu,nu);
