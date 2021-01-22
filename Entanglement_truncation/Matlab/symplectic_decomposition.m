@@ -10,9 +10,24 @@ alpha = data(D+1:2*D);
 M = [[V,-kron(alpha,alpha')];[-kron(alpha',alpha),V]];
 Omega = M^(1/2); %2Dx2D matrices
 Omega_inv = M^(-1/2);
+
 % RDM: only keep upper left blocks of Omega(_inv) in covariance matrix
 X = Omega_inv(1:D, 1:D);
 P = Omega(1:D, 1:D);
 gamma = blkdiag(X,P);
-% and now X != P^-1 
-disp(X), disp(P), disp(gamma);
+
+% actual construction of the symplectic matrix that diagonalizes gamma
+XP = X*P;
+PX = P*X;
+[F, Nu] = eig(XP);
+[E, Mu] = eig(PX);
+S = [[zeros(D),E*Nu^(1/2)];[F*Nu^(1/2),zeros(D)]];
+
+% quantum information concepts
+Nu = diag(Nu);
+entropy = sum(Nu);
+disp(Nu), disp(mu_l), disp(S);
+
+% matrix elements in countable eigenbasis of RDM (number of eigenstates
+% corresponds to bond dimension of corresponding cMPS (with finite Hilbert
+% space))
