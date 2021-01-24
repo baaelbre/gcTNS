@@ -25,8 +25,8 @@ S = [[zeros(D),E*Nu^(1/2)];[F*Nu^(1/2),zeros(D)]];
 
 % quantum information concepts
 Nu = diag(Nu);
-entropy = sum(Nu);
-disp(Nu), disp(mu_l), disp(S);
+entropy = sum((Nu+1/2*ones([D,1])).*log(Nu+1/2*ones([D,1])) - (Nu-1/2*ones([D,1])).*log(Nu-1/2*ones([D,1])));
+disp(Nu), disp(S), disp(log(Nu));
 
 % matrix elements in countable eigenbasis of RDM (number of eigenstates
 % corresponds to bond dimension of corresponding cMPS (with finite Hilbert
