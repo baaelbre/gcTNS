@@ -7,6 +7,6 @@ for i = 1:n
         proj(i,j) = (E(:,i)'*X*E_(:,j))/(E_(:,j)'*X*E_(:,j));
         v = v-proj(i,j)* E_(:,j);
     end
-    E_(:,i) = v/(v'*X*v)^1/2;
+    E_(:,i) = v/(v'*X*v)^0.5;
 y=E_;
 end

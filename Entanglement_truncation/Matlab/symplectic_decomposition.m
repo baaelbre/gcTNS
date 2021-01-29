@@ -24,6 +24,8 @@ XP = (X*P);
 PX = (P*X);
 [F, Nu] = eig((XP)^1/2);
 [E, Mu] = eig((PX)^1/2);
+E = orthonormalization(E, X);
+F = orthonormalization(F, P);
 disp(Nu);
 S = [[zeros(D),E*Nu^(1/2)];[F*Nu^(1/2),zeros(D)]];
 
@@ -51,10 +53,7 @@ plot(Number, xi, '-x');
 xlabel("Mode i $(1->D)$",'Interpreter','Latex','FontSize',20);
 ylabel(" $e^{-\epsilon_i}$",'Interpreter','Latex','FontSize',20);
 title(strcat('$D=$', num2str(D), ' simulation with', ' $\mu=$', num2str(mu), ', $\nu=$', num2str(nu)), 'Interpreter','Latex','FontSize',20);
-disp(E)
-E_ = orthonormalization(E, X);
-F = orthonormalization(F, P);
-disp(E_)
+
 
 % matrix elements in countable eigenbasis of RDM (number of eigenstates
 % corresponds to bond dimension of corresponding cMPS (with finite Hilbert
