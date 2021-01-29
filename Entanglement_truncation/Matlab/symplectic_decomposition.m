@@ -20,37 +20,41 @@ P = Omega(1:D, 1:D);
 gamma = blkdiag(X,P);
 
 % actual construction of the symplectic matrix that diagonalizes gamma
-XP = X*P;
-PX = P*X;
-[F, Nu] = eig(XP);
-[E, Mu] = eig(PX);
+XP = (X*P);
+PX = (P*X);
+[F, Nu] = eig((XP)^1/2);
+[E, Mu] = eig((PX)^1/2);
+disp(Nu);
 S = [[zeros(D),E*Nu^(1/2)];[F*Nu^(1/2),zeros(D)]];
 
 % quantum information concepts
 Nu = diag(Nu);
 entropy = sum((Nu+1/2*ones([D,1])).*log(Nu+1/2*ones([D,1])) - (Nu-1/2*ones([D,1])).*log(Nu-1/2*ones([D,1])));
 % Schmidt values through Tayloring RDM
-nmax = 5
-Epsilon = log(1+2*Nu)
-xi = exp(-Epsilon)
+nmax = 5;
+Epsilon = log(1+2*Nu);
+xi = exp(-Epsilon);
 % xi = e^-eppsilon and schmidt values are (1-xi_1)...(1-xi_D)xi_1^n_1
 schmidts = 0;
 % xi_2^n_2... xi_D^n_D
 Number = linspace(1,D,D);
-disp(xi)
-figure();
 
+figure();
 plot(Number, Epsilon, '-x');
 xlabel("Mode i $(1->D)$",'Interpreter','Latex','FontSize',20);
 ylabel("Entanglement energy $\epsilon_i$",'Interpreter','Latex','FontSize',20);
 title(strcat('$D=$', num2str(D), ' simulation with', ' $\mu=$', num2str(mu), ', $\nu=$', num2str(nu)), 'Interpreter','Latex','FontSize',20);
-%legend(l,'Interpreter','Latex','FontSize',15,'Location','northeast','NumColumns',2)
 
+
+figure();
 plot(Number, xi, '-x');
 xlabel("Mode i $(1->D)$",'Interpreter','Latex','FontSize',20);
 ylabel(" $e^{-\epsilon_i}$",'Interpreter','Latex','FontSize',20);
 title(strcat('$D=$', num2str(D), ' simulation with', ' $\mu=$', num2str(mu), ', $\nu=$', num2str(nu)), 'Interpreter','Latex','FontSize',20);
-
+disp(E)
+E_ = orthonormalization(E, X);
+F = orthonormalization(F, P);
+disp(E_)
 
 % matrix elements in countable eigenbasis of RDM (number of eigenstates
 % corresponds to bond dimension of corresponding cMPS (with finite Hilbert
