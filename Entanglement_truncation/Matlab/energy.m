@@ -43,5 +43,5 @@ plot(0:Dmax,e_gctns*ones(1,Dmax+1),'r--','LineWidth',2)
 plot(0:Dmax,e_ex*ones(1,Dmax+1),'k--','LineWidth',2)
 hold off
 legend(["Truncated GcTNS","Full GcTNS","Exact"],'Interpreter','Latex','FontSize',15)
-xlabel("$D$",'Interpreter','Latex','FontSize',15)
-ylabel("$e(D)$",'Interpreter','Latex','FontSize',15)
+xlabel("$\chi$",'Interpreter','Latex','FontSize',15)
+ylabel("$e(\chi)$",'Interpreter','Latex','FontSize',15)

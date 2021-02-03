@@ -1,4 +1,4 @@
-function [Nu, S, Epsilon, xi, entropy] = symplectic_decomposition(D,mu,nu)
+function [Nu, S, Epsilon, xi, entropy, V, alpha] = symplectic_decomposition(D,mu,nu)
 % dlmread reads data into a matrix, strcat concatenates a string
 data = dlmread(strcat('../../Variational_optimization/Matlab/nonrelboson_real/results/',num2str(mu),'_',num2str(nu),'_', num2str(D), '_1'));
 
