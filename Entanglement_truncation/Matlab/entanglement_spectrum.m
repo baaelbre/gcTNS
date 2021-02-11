@@ -3,10 +3,10 @@ clc
 
 mu = 1;
 nu = 0.4;
-D = 2;
+D = 3;
 % number of iterations: (nmax+1)^D (so can go pretty big as D is small in
 % general)
-nmax = 7 ;
+nmax = 20 ;
 
 [Nu, S, Epsilon, xi, entropy, V, alpha] = symplectic_decomposition(D, mu, nu);
 V = diag(V);
@@ -43,7 +43,7 @@ end
 [schmidts, sortIdx] = sort(schmidts, 'descend');
 states = states(sortIdx);
 
-schmidt_max = 50;
+schmidt_max = 5;
 schmidt_nmbr = linspace(1,schmidt_max,schmidt_max);
 
 ticks = {};
@@ -51,7 +51,7 @@ ticks = {};
 for i = 1:schmidt_max
     ket = states{i};
     str = "";
-    str = str + '$$|'
+    str = str + '$$|';
     for j = 1:D
         str = str + num2str(ket(j)) + ', ';
     end

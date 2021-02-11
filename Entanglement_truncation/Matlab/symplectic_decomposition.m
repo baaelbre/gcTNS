@@ -13,7 +13,9 @@ Omega_inv = M^(-1/2);
 % gamma
 X = Omega_inv(1:D, 1:D);
 P = Omega(1:D, 1:D);
+disp(X); disp(P);
 gamma = blkdiag(X,P);
+disp(gamma);
 
 % actual construction of the symplectic matrix that diagonalizes gamma
 XP = (X*P);
@@ -24,7 +26,7 @@ PX = (P*X);
 % according to eq. (3.22) in thesis Quinten, the eigenvectors should be
 % orthonormalized according to
 E = orthonormalization(E, X);
-F = orthonormalization(F, P);
+F = -orthonormalization(F, P);
 S = [[zeros(D),E*Nu^(1/2)];[F*Nu^(1/2),zeros(D)]];
 
 % quantum information concepts
@@ -35,7 +37,7 @@ disp(Nu);
 
 % Schmidt values through Tayloring RDM
 nmax = 5;
-Epsilon = log(1+2*Nu);
+Epsilon = diag(log((Nu+1/2)/(Nu-1/2)));
 xi = exp(-Epsilon);
 % xi = e^-eppsilon and schmidt values are (1-xi_1)...(1-xi_D)xi_1^n_1
 schmidts = 0;

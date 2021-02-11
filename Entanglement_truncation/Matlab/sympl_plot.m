@@ -3,7 +3,7 @@ clc
 
 mu = 1;
 nu = 0.4;
-D = 3;
+D = 2;
 
 [Nu, S, Epsilon, xi, entropy] = symplectic_decomposition(D, mu, nu);
 Number = linspace(1,D,D);
