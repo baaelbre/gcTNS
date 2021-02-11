@@ -22,22 +22,27 @@ XP = (X*P);
 PX = (P*X);
 [F, Nu] = eig((XP)^1/2);
 [E, Mu] = eig((PX)^1/2);
+% sort symplectic eigenvalues such that they descend
+Nu = diag(Nu);
+[Nu, sortIdx] = sort(Nu, 'descend');
+E = E(:,sortIdx);
+F = F(:,sortIdx);
 
 % according to eq. (3.22) in thesis Quinten, the eigenvectors should be
 % orthonormalized according to
 E = orthonormalization(E, X);
 F = -orthonormalization(F, P);
-S = [[zeros(D),E*Nu^(1/2)];[F*Nu^(1/2),zeros(D)]];
+S = [[zeros(D),E*diag(Nu)^(1/2)];[F*diag(Nu)^(1/2),zeros(D)]];
 
 % quantum information concepts
-Nu = diag(Nu);
+
 arr = 1/2*ones([D,1]);
 entropy = sum((Nu+arr).*log(Nu+arr) - (Nu-arr).*log(Nu-arr));
 disp(Nu);
 
 % Schmidt values through Tayloring RDM
 nmax = 5;
-Epsilon = diag(log((Nu+1/2)/(Nu-1/2)));
+Epsilon = log(Nu+1/2)-log(Nu-1/2);
 xi = exp(-Epsilon);
 % xi = e^-eppsilon and schmidt values are (1-xi_1)...(1-xi_D)xi_1^n_1
 schmidts = 0;

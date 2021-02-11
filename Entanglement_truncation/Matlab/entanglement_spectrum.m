@@ -43,7 +43,7 @@ end
 [schmidts, sortIdx] = sort(schmidts, 'descend');
 states = states(sortIdx);
 
-schmidt_max = 5;
+schmidt_max = 8;
 schmidt_nmbr = linspace(1,schmidt_max,schmidt_max);
 
 ticks = {};
