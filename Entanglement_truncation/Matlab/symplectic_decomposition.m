@@ -13,15 +13,15 @@ Omega_inv = M^(-1/2);
 % gamma
 X = Omega_inv(1:D, 1:D);
 P = Omega(1:D, 1:D);
-disp(X); disp(P);
 gamma = blkdiag(X,P);
-disp(gamma);
 
 % actual construction of the symplectic matrix that diagonalizes gamma
 XP = (X*P);
 PX = (P*X);
 [F, Nu] = eig((XP)^1/2);
 [E, Mu] = eig((PX)^1/2);
+Nu = abs(Nu);
+
 % sort symplectic eigenvalues such that they descend
 Nu = diag(Nu);
 [Nu, sortIdx] = sort(Nu, 'descend');
@@ -31,7 +31,7 @@ F = F(:,sortIdx);
 % according to eq. (3.22) in thesis Quinten, the eigenvectors should be
 % orthonormalized according to
 E = orthonormalization(E, X);
-F = -orthonormalization(F, P);
+F = orthonormalization(F, P);
 S = [[zeros(D),E*diag(Nu)^(1/2)];[F*diag(Nu)^(1/2),zeros(D)]];
 
 % quantum information concepts

@@ -1,12 +1,11 @@
 function y = orthonormalization(E, X)
 n = length(E);
-E_ = zeros(n);
+y = zeros(n);
 for i = 1:n
     v = E(:,i);
     for j = 1:i-1
-        proj(i,j) = (E(:,i)'*X*E_(:,j))/(E_(:,j)'*X*E_(:,j));
-        v = v-proj(i,j)* E_(:,j);
+        proj_ij = (E(:,i)'*X*y(:,j))/(y(:,j)'*X*y(:,j));
+        v = v-proj_ij* y(:,j);
     end
-    E_(:,i) = v/(v'*X*v)^0.5;
-y=E_;
+    y(:,i) = v/(v'*X*v)^0.5;
 end
