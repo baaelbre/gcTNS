@@ -6,8 +6,8 @@ data = dlmread(strcat('../../Variational_optimization/Matlab/nonrelboson_real/re
 V = diag(data(1:D));
 alpha = data(D+1:2*D);
 M = [[V,-kron(alpha,alpha')];[-kron(alpha',alpha),V]];
-Omega = M^(1/2); 
-Omega_inv = M^(-1/2);
+Omega =1/2*M^(1/2); 
+Omega_inv =1/2*M^(-1/2);
 
 % RDM: only keep upper left blocks of Omega(_inv) in covariance matrix
 % gamma
@@ -18,8 +18,8 @@ gamma = blkdiag(X,P);
 % actual construction of the symplectic matrix that diagonalizes gamma
 XP = (X*P);
 PX = (P*X);
-[F, Nu] = eig((XP)^1/2);
-[E, Mu] = eig((PX)^1/2);
+[F, Nu] = eig((XP)^(1/2));
+[E, Mu] = eig((PX)^(1/2));
 Nu = abs(Nu);
 
 % sort symplectic eigenvalues such that they descend
@@ -31,7 +31,7 @@ F = F(:,sortIdx);
 % according to eq. (3.22) in thesis Quinten, the eigenvectors should be
 % orthonormalized according to
 E = orthonormalization(E, X);
-F = orthonormalization(F, P);
+F = -orthonormalization(F, P);
 S = [[zeros(D),E*diag(Nu)^(1/2)];[F*diag(Nu)^(1/2),zeros(D)]];
 
 % quantum information concepts
