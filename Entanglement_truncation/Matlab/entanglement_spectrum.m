@@ -3,7 +3,7 @@ clc
 
 mu = 1;
 nu = 0.4;
-D = 2;
+D = 1;
 % number of iterations: (nmax+1)^D (so can go pretty big as D is small in
 % general)
 nmax = 30 ;
@@ -32,6 +32,8 @@ for i = 1:D
     end
 end
 
+celldisp(states)
+
 for i = 2:length(states)
     schmidts(i) = prod(1-xi);
     for j = 1:D
@@ -43,7 +45,7 @@ end
 [schmidts, sortIdx] = sort(schmidts, 'descend');
 states = states(sortIdx);
 
-schmidt_max = 40;
+schmidt_max = 30;
 schmidt_nmbr = linspace(1,schmidt_max,schmidt_max);
 
 ticks = {};
@@ -73,10 +75,8 @@ ylabel("Schmidt value $$\lambda_i$$",'Interpreter','Latex','FontSize',20);
 title(strcat('$D=$', num2str(D), ' simulation with', ' $\mu=$ ', num2str(mu), ', $\nu=$ ', num2str(nu)), 'Interpreter','Latex','FontSize',20);
 
 % matrix elements
-
-T = inv(S');
-%a = T(1:D,1:D), %d = T(D+1:2*D,D+1:2*D); both are zero
-b = T(1:D,D+1:2*D); c = T(D+1:2*D,1:D);
+T = S.';
+A = T(D+1:2*D,1:D); B = T(1:D,D+1:2*D);
 phi_1 = zeros(schmidt_max, schmidt_max);
 % loop over each phi
 for M = 1:schmidt_max
@@ -92,74 +92,57 @@ for M = 1:schmidt_max
             
             % equations contain a sum over j
             for j = 1:D
-                disp(M), disp(N);
+                %disp(M), disp(N);
                 m = states{M};
                 n = states{N};
-                phi_ij1 = b(i,j)*n(j)^0.5*eq(m(j), n(j)-1);
-                phi_ij2 = b(i,j)*(n(j)+1)^0.5*eq(m(j), n(j)+1);
-                
-                % the squares: double sums 
-                % parts where j = k 
-                phisq_ij1 = b(i,j)^2*(n(j)*(n(j)-1))^0.5*eq(m(j), n(j)-2);
-                phisq_ij2 = b(i,j)^2*(2*n(j)+1)*eq(m(j), n(j));
-                phisq_ij3 = b(i,j)^2*((n(j)+2)*(n(j)+1))^0.5*eq(m(j), n(j)+2);
-                pisq_ij1 = c(i,j)^2*(n(j)*(n(j)-1))^0.5*eq(m(j), n(j)-2);
-                pisq_ij2 = c(i,j)^2*(2*n(j)+1)*eq(m(j), n(j));
-                pisq_ij3 = c(i,j)^2*((n(j)+2)*(n(j)+1))^0.5*eq(m(j), n(j)+2);
+                %phi
+                phi_ij1 = B(i,j)*n(j)^0.5*eq(m(j), n(j)-1)/sqrt(2);
+                phi_ij2 = B(i,j)*(n(j)+1)^0.5*eq(m(j), n(j)+1)/sqrt(2);
                 for l = 1:D
                     if l == j
                         phi_ij1 = phi_ij1; % do nothing
                     else
                         phi_ij1 = phi_ij1*eq(m(l),n(l));
                         phi_ij2 = phi_ij2*eq(m(l),n(l));
-                        phisq_ij1 = phisq_ij1*eq(m(l),n(l));
-                        phisq_ij2 = phisq_ij2*eq(m(l),n(l));
-                        phisq_ij3 = phisq_ij3*eq(m(l),n(l));
-                        pisq_ij1 = pisq_ij1*eq(m(l),n(l));
-                        pisq_ij2 = pisq_ij2*eq(m(l),n(l));
-                        phisq_ij3 = phisq_ij3*eq(m(l),n(l));
                     end
                 end
+                phi_i(M,N) = phi_i(M,N) - 1i*phi_ij1 + 1i*phi_ij2;
                 
-                phi_i(M,N) = phi_i(M,N) - phi_ij1 + phi_ij2;
-                phi_i_sq(M,N) = phi_i_sq(M,N) - phisq_ij1 + phisq_ij2 - phisq_ij3;
-                pi_i_sq(M,N) = phi_i_sq(M,N) + pisq_ij1 + pisq_ij2 + pisq_ij3;
+
                 
-                % parts where j != k
                 for k = 1:D
-                    phisq_ij4 = b(i,j)*b(i,k)*(n(j)*n(k))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1);
-                    phisq_ij5 = b(i,j)*b(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)-1);
-                    phisq_ij6 = b(i,j)*b(i,k)*(n(j)*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1);
-                    phisq_ij7 = b(i,j)*b(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1);
-                    pisq_ij4 = c(i,j)*b(i,k)*(n(j)*n(k))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1);
-                    pisq_ij5 = c(i,j)*b(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)-1);
-                    pisq_ij6 = c(i,j)*b(i,k)*(n(j)*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1);
-                    pisq_ij7 = c(i,j)*b(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1);
+                    phisq_ij1 = B(i,j)*B(i,k)*(n(j)*n(k))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1)/2;
+                    phisq_ij2 = B(i,j)*B(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)-1)/2;
+                    phisq_ij3 = B(i,j)*B(i,k)*((n(j)+1)*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1)/2;
+                    phisq_ij4 = B(i,j)*B(i,k)*((n(j))*(n(k)+1))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1)/2;
+                    pisq_ij1 = A(i,j)*A(i,k)*(n(j)*n(k))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1)/2;
+                    pisq_ij2 = A(i,j)*A(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)-1)/2;
+                    pisq_ij3 = A(i,j)*A(i,k)*((n(j)+1)*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1)/2;
+                    pisq_ij4 = A(i,j)*A(i,k)*(n(j)*(n(k)+1))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1)/2;
                     
                     for l = 1:D
                         if l == j || l == k
                             phi_ij1 = phi_ij1;
                         else
+                            phisq_ij1 = phisq_ij1*eq(m(l),n(l));
+                            phisq_ij2 = phisq_ij2*eq(m(l),n(l));
+                            phisq_ij3 = phisq_ij3*eq(m(l),n(l));
                             phisq_ij4 = phisq_ij4*eq(m(l),n(l));
-                            phisq_ij5 = phisq_ij5*eq(m(l),n(l));
-                            phisq_ij6 = phisq_ij6*eq(m(l),n(l));
-                            phisq_ij7 = phisq_ij7*eq(m(l),n(l));
-                            pisq_ij4 = pisq_ij4*eq(m(l),n(l));
-                            pisq_ij5 = pisq_ij5*eq(m(l),n(l));
-                            pisq_ij6 = pisq_ij6*eq(m(l),n(l));
-                            phisq_ij7 = phisq_ij7*eq(m(l),n(l));
+                            pisq_ij1 = pisq_ij1*eq(m(l),n(l));
+                            pisq_ij2 = pisq_ij2*eq(m(l),n(l));
+                            pisq_ij3 = pisq_ij3*eq(m(l),n(l));
+                            phisq_ij4 = phisq_ij4*eq(m(l),n(l));
                         end
                     end
-                    phi_i_sq(M,N) = phi_i_sq(M,N) - phisq_ij4 + phisq_ij5 + phisq_ij6 - phisq_ij7;
-                    pi_i_sq(M,N) = phi_i_sq(M,N) + pisq_ij4 + pisq_ij5 + pisq_ij6 + pisq_ij7;
+                    phi_i_sq(M,N) = phi_i_sq(M,N) - phisq_ij1 + phisq_ij2 + phisq_ij3 - phisq_ij4;
+                    pi_i_sq(M,N) = phi_i_sq(M,N) + pisq_ij1 + pisq_ij2 + pisq_ij3 + pisq_ij4;
                 end
                 
                 
                 
             end
-            phi_i(M,N) = alpha(i)/2^0.5*phi_i(M,N); % *1i nog
-            phi_i_sq(M,N) = V(i)/2*phi_i_sq(M,N);
-            pi_i_sq(M,N) = pi_i_sq(M,N)/2;
+            phi_i(M,N) = alpha(i)*phi_i(M,N); 
+            phi_i_sq(M,N) = V(i)*phi_i_sq(M,N);
         end
         R(M,N) = R(M,N) + phi_i(M,N);
         Q(M,N) = Q(M,N) - phi_i_sq(M,N)/2 - pi_i_sq(M,N)/2;

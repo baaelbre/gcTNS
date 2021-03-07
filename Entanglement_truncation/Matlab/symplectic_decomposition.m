@@ -6,20 +6,20 @@ data = dlmread(strcat('../../Variational_optimization/Matlab/nonrelboson_real/re
 V = diag(data(1:D));
 alpha = data(D+1:2*D);
 M = [[V,-kron(alpha,alpha')];[-kron(alpha',alpha),V]];
-Omega =1/2*M^(1/2); 
-Omega_inv =1/2*M^(-1/2);
+Omega = M^0.5; 
+Omega_inv = M^(-0.5);
 
 % RDM: only keep upper left blocks of Omega(_inv) in covariance matrix
 % gamma
-X = Omega_inv(1:D, 1:D);
-P = Omega(1:D, 1:D);
+X = Omega_inv(1:D, 1:D)/2;
+P = Omega(1:D, 1:D)/2;
 gamma = blkdiag(X,P);
 
 % actual construction of the symplectic matrix that diagonalizes gamma
 XP = (X*P);
 PX = (P*X);
-[F, Nu] = eig((XP)^(1/2));
-[E, Mu] = eig((PX)^(1/2));
+[F, Nu] = eig((XP)^0.5);
+[E, Mu] = eig((PX)^0.5);
 Nu = abs(Nu);
 
 % sort symplectic eigenvalues such that they descend
@@ -44,10 +44,4 @@ disp(Nu);
 nmax = 5;
 Epsilon = log(Nu+1/2)-log(Nu-1/2);
 xi = exp(-Epsilon);
-% xi = e^-eppsilon and schmidt values are (1-xi_1)...(1-xi_D)xi_1^n_1
-schmidts = 0;
-% xi_2^n_2... xi_D^n_D
 
-% matrix elements in countable eigenbasis of RDM (number of eigenstates
-% corresponds to bond dimension of corresponding cMPS (with finite Hilbert
-% space))
