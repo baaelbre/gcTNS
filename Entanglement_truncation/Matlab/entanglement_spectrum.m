@@ -2,11 +2,11 @@ clear
 clc
 
 mu = 1;
-nu = 0.4;
-D = 3;
+nu = 0.5;
+D = 1;
 % number of iterations: (nmax+1)^D (so can go pretty big as D is small in
 % general)
-nmax = 10 ;
+nmax = 120 ;
 
 [Nu, S, Epsilon, xi, entropy, V, alpha, e_gctns] = symplectic_decomposition(D, mu, nu);
 V = diag(V);
@@ -44,7 +44,7 @@ end
 [schmidts, sortIdx] = sort(schmidts, 'descend');
 states = states(sortIdx);
 
-chi_max = 20;
+chi_max = 100;
 schmidt_nmbr = linspace(1,chi_max,chi_max);
 
 ticks = {};
@@ -106,9 +106,7 @@ for M = 1:schmidt_max
                 phi_ij1 = B(i,j)*n(j)^0.5*eq(m(j), n(j)-1)/sqrt(2);
                 phi_ij2 = B(i,j)*(n(j)+1)^0.5*eq(m(j), n(j)+1)/sqrt(2);
                 for l = 1:D
-                    if l == j
-                        phi_ij1 = phi_ij1; % do nothing
-                    else
+                    if not(l == j)
                         phi_ij1 = phi_ij1*eq(m(l),n(l));
                         phi_ij2 = phi_ij2*eq(m(l),n(l));
                     end
@@ -125,9 +123,7 @@ for M = 1:schmidt_max
                         pisq_ij2 = A(i,j)^2*((n(j)+2)*(n(j)+1))^0.5*eq(m(j), n(j)+2)/2;
                         pisq_ij3 = A(i,j)^2*n(j)*eq(m(j), n(j));
                     for l = 1:D
-                        if l == j
-                            phi_ij1 = phi_ij1; %do nothing
-                        else
+                        if not(l==j)
                         phisq_ij1 = phisq_ij1*eq(m(l),n(l));
                         phisq_ij2 = phisq_ij2*eq(m(l),n(l));
                         phisq_ij3 = phisq_ij3*eq(m(l),n(l));
@@ -142,16 +138,15 @@ for M = 1:schmidt_max
                     elseif not(k == j)
                     phisq_ijk1 = B(i,j)*B(i,k)*(n(j)*n(k))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1)/2;
                     phisq_ijk2 = B(i,j)*B(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)-1)/2;
-                    phisq_ijk3 = B(i,j)*B(i,k)*((n(j)+1)*(n(k)+1))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1)/2;
-                    phisq_ijk4 = B(i,j)*B(i,k)*((n(j))*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)+1)/2;
+                    phisq_ijk3 = B(i,j)*B(i,k)*((n(j))*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)+1)/2;
+                    phisq_ijk4 = B(i,j)*B(i,k)*((n(j)+1)*(n(k)+1))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1)/2;
                     pisq_ijk1 = A(i,j)*A(i,k)*(n(j)*n(k))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)-1)/2;
                     pisq_ijk2 = A(i,j)*A(i,k)*((n(j)+1)*n(k))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)-1)/2;
-                    pisq_ijk3 = A(i,j)*A(i,k)*((n(j)+1)*(n(k)+1))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1)/2;
-                    pisq_ijk4 = A(i,j)*A(i,k)*(n(j)*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)+1)/2;
+                    pisq_ijk3 = A(i,j)*A(i,k)*(n(j)*(n(k)+1))^0.5*eq(m(j), n(j)-1)*eq(m(k),n(k)+1)/2;
+                    pisq_ijk4 = A(i,j)*A(i,k)*((n(j)+1)*(n(k)+1))^0.5*eq(m(j), n(j)+1)*eq(m(k),n(k)+1)/2;
+                    
                     for l = 1:D
-                        if l == j || l == k
-                            phi_ij1 = phi_ij1;
-                        else
+                        if not(l == j || l == k)
                             phisq_ijk1 = phisq_ijk1*eq(m(l),n(l));
                             phisq_ijk2 = phisq_ijk2*eq(m(l),n(l));
                             phisq_ijk3 = phisq_ijk3*eq(m(l),n(l));
@@ -159,11 +154,11 @@ for M = 1:schmidt_max
                             pisq_ijk1 = pisq_ijk1*eq(m(l),n(l));
                             pisq_ijk2 = pisq_ijk2*eq(m(l),n(l));
                             pisq_ijk3 = pisq_ijk3*eq(m(l),n(l));
-                            phisq_ijk4 = phisq_ijk4*eq(m(l),n(l));
+                            pisq_ijk4 = pisq_ijk4*eq(m(l),n(l));
                         end
                     end
-                    phi_i_sq(M,N) = phi_i_sq(M,N) - phisq_ijk1 + phisq_ijk2 - phisq_ijk3 + phisq_ijk4;
-                    pi_i_sq(M,N) = phi_i_sq(M,N) + pisq_ijk1 + pisq_ijk2 + pisq_ijk3 + pisq_ijk4;
+                    phi_i_sq(M,N) = phi_i_sq(M,N) - phisq_ijk1 + phisq_ijk2 + phisq_ijk3 - phisq_ijk4;
+                    pi_i_sq(M,N) = pi_i_sq(M,N) + pisq_ijk1 + pisq_ijk2 + pisq_ijk3 + pisq_ijk4;
                     end
                 end
                 
@@ -172,9 +167,10 @@ for M = 1:schmidt_max
             end
             phi_i(M,N) = alpha(i)*phi_i(M,N); 
             phi_i_sq(M,N) = V(i)*phi_i_sq(M,N);
+            R(M,N) = R(M,N) + phi_i(M,N);
+            Q(M,N) = Q(M,N) - phi_i_sq(M,N)/2 - pi_i_sq(M,N)/2;
         end
-        R(M,N) = R(M,N) + phi_i(M,N);
-        Q(M,N) = Q(M,N) - phi_i_sq(M,N)/2 - pi_i_sq(M,N)/2;
+        
     end
     
 end
