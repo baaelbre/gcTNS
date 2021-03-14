@@ -2,8 +2,8 @@ clear
 clc
 
 mu = 1;
-nu = 0.5;
-D = 5;
+nu = 0.4;
+D = 1;
 
 [Nu, S, Epsilon, xi, entropy] = symplectic_decomposition(D, mu, nu);
 Number = linspace(1,D,D);

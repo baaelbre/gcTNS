@@ -1,5 +1,8 @@
-function [Nu, S, Epsilon, xi, entropy, V, alpha] = symplectic_decomposition(D,mu,nu)
+function [Nu, S, Epsilon, xi, entropy, V, alpha, e_gctns] = symplectic_decomposition(D,mu,nu)
 % dlmread reads data into a matrix, strcat concatenates a string
+data = dlmread('../../Variational_optimization/Matlab/nonrelboson_real/results/data');
+mask = boolean((data(:,1) == mu).*(data(:,2) == nu).*(data(:,3) == D));
+e_gctns = data(mask,4);
 data = dlmread(strcat('../../Variational_optimization/Matlab/nonrelboson_real/results/',num2str(mu),'_',num2str(nu),'_', num2str(D), '_1'));
 
 % construct 2Dx2D coupling matrix 
