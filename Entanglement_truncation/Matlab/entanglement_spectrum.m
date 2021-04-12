@@ -3,50 +3,16 @@ clc
 
 mu = 1;
 nu = 0.4;
-D = 1;
-% number of iterations: (nmax+1)^D (so can go pretty big as D is small in
-% general)
-nmax = 20   ;
+D = 2;
+
 
 [Nu, S, Epsilon, xi, entropy, V, alpha, e_gctns] = symplectic_decomposition(D, mu, nu);
 V = diag(V);
 
-% brute force way: a nested for loop in which you fill each mode up to a
-% certain n_max, and calculate the singular value for each configuration
-% every particle in mode i corresponds to a factor xi_i in the Schmidt
-% value
-vacuum = zeros([D,1]);
-states = {vacuum};
-schmidts = [prod(1-xi)];
-newstate = vacuum;
-ctr=2;
-for i = 1:D
-    for j = 1:length(states)
-        newstate = states{j};
-        for k = 1:nmax
-            states{ctr} = newstate;
-            states{ctr}(i) = newstate(i)+1;
-            newstate = states{ctr};
-            ctr = ctr + 1 ;
-        end
-    end
-end
-
-
-for i = 2:length(states)
-    schmidts(i) = prod(1-xi);
-    for j = 1:D
-        n = states{i}(j);
-        schmidts(i) = schmidts(i)*xi(j)^n;
-    end
-end
-
-[schmidts, sortIdx] = sort(schmidts, 'descend');
-states = states(sortIdx);
-disp(states);
-
 chi_max = 10;
 schmidt_nmbr = linspace(1,chi_max,chi_max);
+% generate all states with SV greater than or equal to SV_min
+[states, schmidts] = boson_sampling(D, mu, nu, 10e-12);
 
 ticks = {};
 % construct list of state strings
@@ -63,6 +29,7 @@ for i = 1:chi_max
     str = str+'>$$';
     ticks{i} = str;
 end
+
 
 set(groot,'defaultAxesTickLabelInterpreter','latex');  
 figure();
